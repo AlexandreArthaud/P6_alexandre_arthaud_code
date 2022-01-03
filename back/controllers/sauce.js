@@ -24,19 +24,54 @@ exports.createSauce = (req, res, next) => {
 
 	sauce.save()
 		.then(() => { res.status(201).json({ message: 'Post saved successfully!'}); } )
-		.catch((error) => { res.status(400).json({ error: 'co' }); });
+		.catch((error) => { res.status(400).json({ error }); });
 }
 
 exports.modifySauce = (req, res, next) => {
 	const thingObject = req.file ?
 		{
-			...JSON.parse(req.body.thing),
+			...JSON.parse(req.body.sauce),
 			imageUrl: `{(req.protocol}://${req.get('host')}/images/${req.file.filename}`
 		} : { ...req.body };
 
 	Sauce.updateOne({ _id: req.params.id }, { ...thingObject, _id: req.params.id })
 		.then(() => res.status(200).json({ message: 'Object modified' }))
 		.catch(error => res.status(400).json({ error }));
+}
+
+exports.modifySauceLikes = (req, res, next) => {
+	Sauce.findOne({ id: req.params.id }, (err, sauce) => {
+		if (req.body.like === 1 && !sauce.usersLiked.includes(req.auth.userId)) { 
+			sauce.likes += 1;
+			sauce.usersLiked.push(req.auth.userId)
+
+			if (sauce.usersDisliked.includes(req.auth.userId)) {
+				sauce.usersDisliked.splice(sauce.usersDisliked.indexOf(req.auth.userId), 1)
+			}
+		}
+		else if (req.body.like === -1 && !sauce.usersDisliked.includes(req.auth.userId)) {
+			sauce.dislikes += 1;
+			sauce.usersDisliked.push(req.auth.userId);
+
+			if (sauce.usersLiked.includes(req.auth.userId)) {
+				sauce.usersLiked.splice(sauce.usersLiked.indexOf(req.auth.userId), 1);
+			}
+		}
+		else if (req.body.like === 0) {
+			if (sauce.usersLiked.includes(req.auth.userId)) {
+				sauce.usersLiked.splice(sauce.usersLiked.indexOf(req.auth.userId), 1);
+				sauce.likes -= 1;
+			}
+			if (sauce.usersDisliked.includes(req.auth.userId)) {
+				sauce.usersDisliked.splice(sauce.usersDisliked.indexOf(req.auth.userId), 1)
+				sauce.dislikes -= 1;
+			}
+		}
+
+		sauce.save() 
+			.then(() => res.status(200).json({ message: 'Object modified' }))
+			.catch(error => res.status(400).json({ error }));
+	});
 }
 
 exports.deleteSauce = (req, res, next) => {
