@@ -1,5 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const dotenv = require('dotenv')
+dotenv.config();
 const path = require('path');
 
 const app = express();
@@ -8,7 +10,7 @@ const sauceRoutes = require('./routes/sauce');
 const userRoutes = require('./routes/user');
 
 mongoose.connect(
-	'mongodb+srv://alyeksandre:duahtra42;@cluster0.vlv5z.mongodb.net/myFirstDatabase?retryWrites=true&w=majority',
+	`mongodb+srv://${process.env.DB_LOGIN}:${process.env.DB_PASSWORD}@cluster0.vlv5z.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`,
 	{ useNewUrlParser: true,
 		useUnifiedTopology: true,
 	}
