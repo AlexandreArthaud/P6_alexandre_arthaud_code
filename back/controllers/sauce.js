@@ -40,7 +40,7 @@ exports.modifySauce = (req, res, next) => {
 }
 
 exports.modifySauceLikes = (req, res, next) => {
-	Sauce.findOne({ id: req.params.id }, (err, sauce) => {
+	Sauce.findOne({ _id: req.params.id }, (err, sauce) => {
 		if (req.body.like === 1 && !sauce.usersLiked.includes(req.auth.userId)) { 
 			sauce.likes += 1;
 			sauce.usersLiked.push(req.auth.userId)
