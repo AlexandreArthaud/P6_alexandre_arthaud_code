@@ -6,7 +6,7 @@ const passwordValidator = [
 	validate({
 		validator: 'isLength',
 		arguments: [3, 40],
-		message: 'Name should be between {ARGS[0]} and {ARGS[1]} characters',
+		message: 'Password should be between {ARGS[0]} and {ARGS[1]} characters',
 	}),
 ]
 
