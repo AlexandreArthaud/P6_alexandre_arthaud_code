@@ -99,6 +99,7 @@ exports.modifySauceLikes = (req, res, next) => {
 			.then(() => res.status(200).json({ message: "Object modified"}))
 			.catch(error => res.status(400).json({ message: error }));
 		})
+		.catch(error => res.status(400).json({ error }));
 	}
 }
 
