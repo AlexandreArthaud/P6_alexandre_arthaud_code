@@ -33,6 +33,10 @@ exports.modifySauce = (req, res, next) => {
 			...JSON.parse(req.body.sauce),
 			imageUrl: `{(req.protocol}://${req.get('host')}/images/${req.file.filename}`
 		} : { ...req.body };
+	
+	if (req.auth.userId != req.params.id) {
+		res.status(403);
+	}
 
 	Sauce.updateOne({ _id: req.params.id }, { ...thingObject, _id: req.params.id })
 		.then(() => res.status(200).json({ message: 'Object modified' }))
