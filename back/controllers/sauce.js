@@ -1,4 +1,5 @@
-const fs = require('fs')
+const fs = require('fs');
+const sauce = require('../models/sauce');
 const Sauce = require('../models/sauce');
 
 exports.getAllSauces = (req, res, next) => {
@@ -44,38 +45,61 @@ exports.modifySauce = (req, res, next) => {
 }
 
 exports.modifySauceLikes = (req, res, next) => {
-	Sauce.findOne({ _id: req.params.id }, (err, sauce) => {
-		if (req.body.like === 1 && !sauce.usersLiked.includes(req.auth.userId)) { 
-			sauce.likes += 1;
-			sauce.usersLiked.push(req.auth.userId)
-
-			if (sauce.usersDisliked.includes(req.auth.userId)) {
-				sauce.usersDisliked.splice(sauce.usersDisliked.indexOf(req.auth.userId), 1)
-			}
-		}
-		else if (req.body.like === -1 && !sauce.usersDisliked.includes(req.auth.userId)) {
-			sauce.dislikes += 1;
-			sauce.usersDisliked.push(req.auth.userId);
-
+	// User liked
+	if (req.body.like === 1) {
+		Sauce.updateOne({ _id: req.params.id },
+			{ 
+				$inc: { likes: 1 },
+				$pull: { usersDisliked: req.auth.userId },
+				$push: { usersLiked: req.auth.userId }
+			})
+		.then(() => res.status(200).json({ message: "Object modified"}))
+		.catch(error => res.status(400).json({ error }));
+	}
+	// User disliked
+	else if (req.body.like === -1) {
+		Sauce.updateOne({ _id: req.params.id },
+			{ 
+				$inc: { dislikes: 1 },
+				$pull: { usersLiked: req.auth.userId },
+				$push: { usersDisliked: req.auth.userId }
+			})
+		.then(() => res.status(200).json({ message: "Object modified"}))
+		.catch(error => res.status(400).json({ error }));
+	}
+	// User cancelled
+	else if (req.body.like === 0) {
+		Sauce.findOne({ _id: req.params.id })
+		.then(sauce => {
+			let update = {};
 			if (sauce.usersLiked.includes(req.auth.userId)) {
-				sauce.usersLiked.splice(sauce.usersLiked.indexOf(req.auth.userId), 1);
+				update = {
+					$inc: {
+						likes: -1
+					},
+					$pull: {
+						usersLiked: req.auth.userId ,
+						usersDisliked: req.auth.userId 
+					}
+				}
 			}
-		}
-		else if (req.body.like === 0) {
-			if (sauce.usersLiked.includes(req.auth.userId)) {
-				sauce.usersLiked.splice(sauce.usersLiked.indexOf(req.auth.userId), 1);
-				sauce.likes -= 1;
+			else if (sauce.usersDisliked.includes(req.auth.userId)) {
+				update = {
+					$inc: {
+						dislikes: -1
+					},
+					$pull: {
+						usersLiked: req.auth.userId ,
+						usersDisliked: req.auth.userId 
+					}
+				}
 			}
-			if (sauce.usersDisliked.includes(req.auth.userId)) {
-				sauce.usersDisliked.splice(sauce.usersDisliked.indexOf(req.auth.userId), 1)
-				sauce.dislikes -= 1;
-			}
-		}
 
-		sauce.save() 
-			.then(() => res.status(200).json({ message: 'Object modified' }))
-			.catch(error => res.status(400).json({ error }));
-	});
+			Sauce.updateOne({ _id: req.params.id }, update)
+			.then(() => res.status(200).json({ message: "Object modified"}))
+			.catch(error => res.status(400).json({ message: error }));
+		})
+	}
 }
 
 exports.deleteSauce = (req, res, next) => {
